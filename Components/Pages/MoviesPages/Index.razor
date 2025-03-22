@@ -1,4 +1,5 @@
 ﻿@page "/movies"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using BlazorWebAppMovies.Models
@@ -10,30 +11,43 @@
 
 <h1>Index</h1>
 
+<input type="search" @bind="titleFilter" @bind:event="oninput" />
+
 <p>
     <a href="movies/create">Create New</a>
 </p>
 
-<QuickGrid Class="table" Items="context.Movies">
-    <PropertyColumn Property="movies => movies.Title" />
-    <PropertyColumn Property="movies => movies.ReleaseDate" Title="Release Date" />
-    <PropertyColumn Property="movies => movies.Genre" />
-    <PropertyColumn Property="movies => movies.Price" />
+<div>
+    <QuickGrid Class="table" Items="FilteredMovies" Pagination="pagination">
+        <PropertyColumn Property="movies => movies.Title" Sortable="true" />
+        <PropertyColumn Property="movies => movies.ReleaseDate" Title="Release Date" />
+        <PropertyColumn Property="movies => movies.Genre" />
+        <PropertyColumn Property="movies => movies.Price" />
+        <PropertyColumn Property="movie => movie.Rating" />
 
-    <TemplateColumn Context="movies">
-        <a href="@($"movies/edit?id={movies.Id}")">Edit</a> |
-        <a href="@($"movies/details?id={movies.Id}")">Details</a> |
-        <a href="@($"movies/delete?id={movies.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+        <TemplateColumn Context="movies">
+            <a href="@($"movies/edit?id={movies.Id}")">Edit</a> |
+            <a href="@($"movies/details?id={movies.Id}")">Details</a> |
+            <a href="@($"movies/delete?id={movies.Id}")">Delete</a>
+        </TemplateColumn>
+    </QuickGrid>
+</div>
+
+<Paginator State="pagination" />
 
 @code {
     private BlazorWebAppMoviesContext context = default!;
+
+    private PaginationState pagination = new PaginationState { ItemsPerPage = 5 };
 
     protected override void OnInitialized()
     {
         context = DbFactory.CreateDbContext();
     }
+
+    private string titleFilter = string.Empty;
+
+    private IQueryable<Movies> FilteredMovies => context.Movies.Where(m => m.Title!.Contains(titleFilter));
 
     public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
